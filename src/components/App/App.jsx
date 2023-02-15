@@ -1,59 +1,65 @@
-import { Report } from 'notiflix';
 import { useState } from 'react';
 
-import ContactForm from 'components/ContactForm';
-import ContactList from 'components/ContactList';
-import Filter from '../Filter';
-import { Container, SubTitle, Title } from './App.styled';
+import { FeedbackOptions } from 'components/FeedbackOptions';
+import { Notification } from 'components/Notification';
+import { Statistics } from 'components/Statistics';
+import { Container } from './App.styled';
 
 const App = () => {
-  const [contacts, setContacts] = useState([]);
-  const [filter, setFilter] = useState('');
+  const [good, setGood] = useState(0);
+  const [neutral, setNeutral] = useState(0);
+  const [bad, setBad] = useState(0);
 
-  const onSubmitForm = contact => {
-    const isContainName = checkName(contact.name);
+  const feedbackList = ['good', 'neutral', 'bad'];
 
-    isContainName && setContacts(state => [...state, contact]);
-  };
+  const handleCounter = e => {
+    const key = e.currentTarget.textContent;
 
-  const handleFilter = e => {
-    setFilter(e.currentTarget.value);
-  };
-
-  const deleteContact = contactId => {
-    setContacts(state => state.filter(({ id }) => id !== contactId));
-  };
-
-  const checkName = newName => {
-    if (contacts.some(({ name }) => name === newName)) {
-      Report.warning(`${newName} is already in contacts`);
-      return false;
+    switch (key) {
+      case 'good':
+        setGood(state => state + 1);
+        break;
+      case 'neutral':
+        setNeutral(state => state + 1);
+        break;
+      case 'bad':
+        setBad(state => state + 1);
+        break;
+      default:
+        break;
     }
-    return true;
+  };
+
+  const totalFeedback = () => {
+    return good + neutral + bad;
+  };
+
+  const countPositiveFeedbackPercentage = () => {
+    const total = totalFeedback();
+    if (good === 0) {
+      return Math.round((neutral / total) * 50);
+    }
+
+    return Math.round((good / total) * 100);
   };
 
   return (
     <Container>
-      <Title>Phonebook</Title>
-      <ContactForm onSubmit={onSubmitForm} />
-      <SubTitle>Contacts</SubTitle>
-      <Filter value={filter} toFilter={handleFilter} />
-      <ContactList
-        renderItems={ContactsAfterFilter(contacts, filter)}
-        deleteContact={deleteContact}
-      />
+      <FeedbackOptions options={feedbackList} onLeaveFeedback={handleCounter} />
+
+      {totalFeedback() > 0 ? (
+        <Statistics
+          good={good}
+          neutral={neutral}
+          bad={bad}
+          total={good + neutral + bad}
+          positivePercentage={countPositiveFeedbackPercentage()}
+        ></Statistics>
+      ) : (
+        <Notification message="There is no feedback" />
+      )}
     </Container>
   );
 };
 
-const ContactsAfterFilter = (contacts, filter) => {
-  const normalizzedFilter = filter.toLowerCase();
-
-  return contacts.filter(
-    ({ name, number }) =>
-      name.toLowerCase().includes(normalizzedFilter) ||
-      number.includes(normalizzedFilter)
-  );
-};
-
-export default App;
+export { App };
